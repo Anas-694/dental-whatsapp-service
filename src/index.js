@@ -79,26 +79,31 @@ async function startWhatsApp() {
     startupError = null;
     const { state, saveCreds } = await useMultiFileAuthState(SESSION_DIR);
     
-    let version = [6, 7, 18];
+    let version = undefined;
     try {
       const fetched = await fetchLatestBaileysVersion();
       if (fetched && fetched.version) {
         version = fetched.version;
       }
     } catch (err) {
-      console.error('⚠️ Failed to fetch latest Baileys version, using fallback:', err.message);
+      console.log('⚠️ Failed to fetch latest WhatsApp version from server, letting Baileys auto-select default.');
     }
 
     connectionStatus = 'connecting';
     io.emit('status', { status: 'connecting' });
 
-    sock = makeWASocket({
-      version,
+    const socketConfig: any = {
       logger,
       auth: state,
       printQRInTerminal: false,
-      browser: ['Mac OS', 'Chrome', '121.0.0.0'],
-    });
+      browser: ['Mac OS', 'Chrome', '122.0.0.0'],
+    };
+
+    if (version) {
+      socketConfig.version = version;
+    }
+
+    sock = makeWASocket(socketConfig);
 
   // Save credentials when updated
   sock.ev.on('creds.update', saveCreds);
