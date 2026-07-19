@@ -57,7 +57,16 @@ function authenticate(req, res, next) {
 // ─── Start WhatsApp Connection ────────────────────────────────────────────────
 async function startWhatsApp() {
   const { state, saveCreds } = await useMultiFileAuthState(SESSION_DIR);
-  const { version } = await fetchLatestBaileysVersion();
+  
+  let version = [6, 7, 18];
+  try {
+    const fetched = await fetchLatestBaileysVersion();
+    if (fetched && fetched.version) {
+      version = fetched.version;
+    }
+  } catch (err) {
+    console.error('⚠️ Failed to fetch latest Baileys version, using fallback:', err.message);
+  }
 
   connectionStatus = 'connecting';
   io.emit('status', { status: 'connecting' });
@@ -67,7 +76,7 @@ async function startWhatsApp() {
     logger,
     auth: state,
     printQRInTerminal: false,
-    browser: ['DentalCare Pro', 'Chrome', '120.0.0'],
+    browser: ['Mac OS', 'Chrome', '121.0.0.0'],
   });
 
   // Save credentials when updated
