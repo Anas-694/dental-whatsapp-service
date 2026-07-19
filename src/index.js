@@ -41,6 +41,7 @@ let sock = null;
 let qrCodeData = null;
 let connectionStatus = 'disconnected'; // disconnected | connecting | connected
 let connectedPhone = null;
+let startupError = null;
 
 // ─── Logger ──────────────────────────────────────────────────────────────────
 const logger = pino({ level: 'silent' });
@@ -56,28 +57,30 @@ function authenticate(req, res, next) {
 
 // ─── Start WhatsApp Connection ────────────────────────────────────────────────
 async function startWhatsApp() {
-  const { state, saveCreds } = await useMultiFileAuthState(SESSION_DIR);
-  
-  let version = [6, 7, 18];
   try {
-    const fetched = await fetchLatestBaileysVersion();
-    if (fetched && fetched.version) {
-      version = fetched.version;
+    startupError = null;
+    const { state, saveCreds } = await useMultiFileAuthState(SESSION_DIR);
+    
+    let version = [6, 7, 18];
+    try {
+      const fetched = await fetchLatestBaileysVersion();
+      if (fetched && fetched.version) {
+        version = fetched.version;
+      }
+    } catch (err) {
+      console.error('⚠️ Failed to fetch latest Baileys version, using fallback:', err.message);
     }
-  } catch (err) {
-    console.error('⚠️ Failed to fetch latest Baileys version, using fallback:', err.message);
-  }
 
-  connectionStatus = 'connecting';
-  io.emit('status', { status: 'connecting' });
+    connectionStatus = 'connecting';
+    io.emit('status', { status: 'connecting' });
 
-  sock = makeWASocket({
-    version,
-    logger,
-    auth: state,
-    printQRInTerminal: false,
-    browser: ['Mac OS', 'Chrome', '121.0.0.0'],
-  });
+    sock = makeWASocket({
+      version,
+      logger,
+      auth: state,
+      printQRInTerminal: false,
+      browser: ['Mac OS', 'Chrome', '121.0.0.0'],
+    });
 
   // Save credentials when updated
   sock.ev.on('creds.update', saveCreds);
@@ -123,7 +126,12 @@ async function startWhatsApp() {
       console.log(`✅ WhatsApp connected: ${connectedPhone}`);
       io.emit('status', { status: 'connected', phone: connectedPhone });
     }
-  });
+  } catch (err) {
+    console.error('❌ startWhatsApp error:', err);
+    startupError = err.message || String(err);
+    connectionStatus = 'disconnected';
+    io.emit('status', { status: 'disconnected', error: startupError });
+  }
 }
 
 // ─── Format Phone Number ──────────────────────────────────────────────────────
@@ -158,6 +166,7 @@ app.get('/api/status', authenticate, (req, res) => {
     status: connectionStatus,
     phone: connectedPhone,
     qrReady: !!qrCodeData,
+    error: startupError,
   });
 });
 
