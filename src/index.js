@@ -42,6 +42,24 @@ let qrCodeData = null;
 let connectionStatus = 'disconnected'; // disconnected | connecting | connected
 let connectedPhone = null;
 let startupError = null;
+let debugLogs = [];
+
+const originalLog = console.log;
+const originalError = console.error;
+
+console.log = (...args) => {
+  const msg = args.map(a => typeof a === 'object' ? JSON.stringify(a) : String(a)).join(' ');
+  debugLogs.push(`[LOG] ${new Date().toISOString()}: ${msg}`);
+  if (debugLogs.length > 200) debugLogs.shift();
+  originalLog(...args);
+};
+
+console.error = (...args) => {
+  const msg = args.map(a => typeof a === 'object' ? JSON.stringify(a) : String(a)).join(' ');
+  debugLogs.push(`[ERR] ${new Date().toISOString()}: ${msg}`);
+  if (debugLogs.length > 200) debugLogs.shift();
+  originalError(...args);
+};
 
 // ─── Logger ──────────────────────────────────────────────────────────────────
 const logger = pino({ level: 'silent' });
@@ -169,6 +187,10 @@ app.get('/api/status', authenticate, (req, res) => {
     qrReady: !!qrCodeData,
     error: startupError,
   });
+});
+
+app.get('/api/debug-logs', authenticate, (req, res) => {
+  res.json({ success: true, logs: debugLogs });
 });
 
 // Get QR Code
