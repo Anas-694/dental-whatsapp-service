@@ -126,12 +126,13 @@ async function startWhatsApp() {
       console.log(`✅ WhatsApp connected: ${connectedPhone}`);
       io.emit('status', { status: 'connected', phone: connectedPhone });
     }
-  } catch (err) {
-    console.error('❌ startWhatsApp error:', err);
-    startupError = err.message || String(err);
-    connectionStatus = 'disconnected';
-    io.emit('status', { status: 'disconnected', error: startupError });
-  }
+  });
+} catch (err) {
+  console.error('❌ startWhatsApp error:', err);
+  startupError = err.message || String(err);
+  connectionStatus = 'disconnected';
+  io.emit('status', { status: 'disconnected', error: startupError });
+}
 }
 
 // ─── Format Phone Number ──────────────────────────────────────────────────────
