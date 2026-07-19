@@ -92,7 +92,7 @@ async function startWhatsApp() {
     connectionStatus = 'connecting';
     io.emit('status', { status: 'connecting' });
 
-    const socketConfig: any = {
+    const socketConfig = {
       logger,
       auth: state,
       printQRInTerminal: false,
