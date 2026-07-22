@@ -28,7 +28,7 @@ app.use(cors());
 app.use(express.json());
 
 const PORT = process.env.PORT || 3001;
-const AUTH_TOKEN = process.env.AUTH_TOKEN || 'dental-whatsapp-secret-2026';
+const AUTH_TOKEN = 'dental-whatsapp-secret-2026';
 const SESSION_DIR = path.join(__dirname, '../sessions');
 
 // Create sessions directory if not exists
